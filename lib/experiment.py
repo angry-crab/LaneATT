@@ -9,16 +9,16 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 class Experiment:
-    def __init__(self, exp_name, args=None, mode='train', exps_basedir='experiments', tensorboard_dir='tensorboard'):
-        self.name = exp_name
-        self.exp_dirpath = os.path.join(exps_basedir, exp_name)
+    def __init__(self, cfg, args=None, mode='train', exps_basedir='experiments', tensorboard_dir='tensorboard'):
+        self.name = 'laneatt_r18_culane'
+        self.exp_dirpath = os.path.join(exps_basedir, self.name)
         self.models_dirpath = os.path.join(self.exp_dirpath, 'models')
         self.results_dirpath = os.path.join(self.exp_dirpath, 'results')
         self.cfg_path = os.path.join(self.exp_dirpath, 'config.yaml')
         self.code_state_path = os.path.join(self.exp_dirpath, 'code_state.txt')
         self.log_path = os.path.join(self.exp_dirpath, 'log_{}.txt'.format(mode))
-        self.tensorboard_writer = SummaryWriter(os.path.join(tensorboard_dir, exp_name))
-        self.cfg = None
+        self.tensorboard_writer = SummaryWriter(os.path.join(tensorboard_dir, self.name))
+        self.cfg = cfg
         self.setup_exp_dir()
         self.setup_logging()
 
@@ -150,3 +150,12 @@ class Experiment:
             cfg_file.write(str(self.cfg))
 
         return metrics
+    
+    def load_pretrained_weights(self, model, model_path):
+        pretrained_model = torch.load(model_path)["model"]
+        for layer, values in model.state_dict().items():
+            if layer not in pretrained_model:
+                print("not found")
+                pretrained_model.update({layer: values})
+        model.load_state_dict(pretrained_model)
+        return model

@@ -1,1 +1,8 @@
 *.zip
+laneatt_experiments
+experiments
+lib/__pycache__
+lib/datasets/__pycache__
+lib/models/__pycache__
+tensorboard
+utils/__pycache__
