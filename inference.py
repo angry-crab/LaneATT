@@ -12,8 +12,8 @@ from lib.experiment import Experiment
 def draw_annotation(pred=None, img=None):
     # _, label, _ = self.__getitem__(idx)
     # label = self.label_to_lanes(label)
-    img_w = 360
-    img_h = 640
+    img_w = 640
+    img_h = 360
     img = cv2.resize(img, (img_w, img_h))
     # img_h, _, _ = img.shape
     # Pad image to visualize extrapolated predictions
