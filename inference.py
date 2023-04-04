@@ -12,10 +12,10 @@ from lib.experiment import Experiment
 def draw_annotation(pred=None, img=None):
     # _, label, _ = self.__getitem__(idx)
     # label = self.label_to_lanes(label)
-    img_w = 460
+    img_w = 360
     img_h = 640
     img = cv2.resize(img, (img_w, img_h))
-    img_h, _, _ = img.shape
+    # img_h, _, _ = img.shape
     # Pad image to visualize extrapolated predictions
     pad = 0
     if pad > 0:
@@ -116,7 +116,7 @@ with torch.no_grad():
 
     prediction = model.decode(obj_and_reg_output, as_lanes=True)
 
-    img = (image.cpu().permute(1, 2, 0).numpy() * 255).astype(np.uint8)
+    img = (image_tensor[0].cpu().permute(1, 2, 0).numpy() * 255).astype(np.uint8)
     img = draw_annotation(img=img, pred=prediction[0])
     cv2.imshow('pred', img)
     cv2.waitKey(0)
