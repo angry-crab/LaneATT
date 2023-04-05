@@ -6,3 +6,4 @@ lib/datasets/__pycache__
 lib/models/__pycache__
 tensorboard
 utils/__pycache__
+datasets

@@ -16,9 +16,10 @@ from .tusimple import TuSimple
 from .llamas import LLAMAS
 from .nolabel_dataset import NoLabelDataset
 
-GT_COLOR = (255, 0, 0)
-PRED_HIT_COLOR = (0, 255, 0)
-PRED_MISS_COLOR = (0, 0, 255)
+GT_COLOR = (255, 0, 0) #BLUE
+PRED_HIT_COLOR = (0, 255, 0) #GREEN
+PRED_MISS_COLOR = (0, 0, 255) #RED
+PRED_VIS_COLOR = (0, 0, 200) #RED
 IMAGENET_MEAN = np.array([0.485, 0.456, 0.406])
 IMAGENET_STD = np.array([0.229, 0.224, 0.225])
 
@@ -176,7 +177,7 @@ class LaneDataset(Dataset):
             lanes.append(Lane(points=points))
         return lanes
 
-    def draw_annotation(self, idx, label=None, pred=None, img=None):
+    def draw_annotation(self, idx, label=None, pred=None, img=None, cmp=False):
         # Get image if not provided
         if img is None:
             # print(self.annotations[idx]['path'])
@@ -209,12 +210,17 @@ class LaneDataset(Dataset):
             data.append((matches, accs, pred))
         else:
             fp = fn = None
+        if cmp:
+            match = [-1] * len(pred)
+            data[-1] = (match, None, pred)
         for matches, accs, datum in data:
             for i, l in enumerate(datum):
                 if matches is None:
                     color = GT_COLOR
-                elif matches[i]:
+                elif matches[i] > 0:
                     color = PRED_HIT_COLOR
+                elif matches[i] == -1:
+                    color = PRED_VIS_COLOR
                 else:
                     color = PRED_MISS_COLOR
                 points = l.points
@@ -271,6 +277,7 @@ class LaneDataset(Dataset):
         item = self.dataset[idx]
         img_org = cv2.imread(item['path'])
         line_strings_org = self.lane_to_linestrings(item['old_anno']['lanes'])
+        # print(item['old_anno']['lanes'])
         line_strings_org = LineStringsOnImage(line_strings_org, shape=img_org.shape)
         for i in range(30):
             img, line_strings = self.transform(image=img_org.copy(), line_strings=line_strings_org)
