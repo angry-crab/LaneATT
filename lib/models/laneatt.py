@@ -104,6 +104,12 @@ class LaneATT(nn.Module):
         reg_proposals[:, :, :2] = cls_logits
         reg_proposals[:, :, 4:] += reg
 
+        # print(reg_proposals.shape)
+        # print(attention_matrix.shape)
+
+        # reg_proposals (1, 1000, 77)
+        # attention_matrix (1, 1000, 1000)
+        
         # Apply nms
         proposals_list = self.nms(reg_proposals, attention_matrix, nms_thres, nms_topk, conf_threshold)
 
@@ -126,7 +132,8 @@ class LaneATT(nn.Module):
                 if proposals.shape[0] == 0:
                     proposals_list.append((proposals[[]], self.anchors[[]], attention_matrix[[]], None))
                     continue
-                keep, num_to_keep, _ = nms(proposals, scores, overlap=nms_thres, top_k=nms_topk)
+                # keep, num_to_keep, _ = nms(proposals, scores, overlap=nms_thres, top_k=nms_topk)
+                keep, num_to_keep = self.lane_nms(proposals, scores, overlap=nms_thres, top_k=nms_topk)
                 keep = keep[:num_to_keep]
             proposals = proposals[keep]
             anchor_inds = anchor_inds[keep]
@@ -375,6 +382,45 @@ class LaneATT(nn.Module):
         device_self.cut_xs = device_self.cut_xs.to(*args, **kwargs)
         device_self.invalid_mask = device_self.invalid_mask.to(*args, **kwargs)
         return device_self
+    
+    def lane_nms(self,proposals,scores,overlap=50, top_k=4):
+        keep_index = []
+        sorted_score, indices = torch.sort(scores, descending=True) # from big to small 
+        r_filters = np.zeros(len(scores))
+
+        for i,indice in enumerate(indices):
+            if r_filters[i]==1: # continue if this proposal is filted by nms before
+                continue
+            keep_index.append(indice)
+            if len(keep_index)>top_k: # break if more than top_k
+                break
+            if i == (len(scores)-1):# break if indice is the last one
+                break
+            sub_indices = indices[i+1:]
+            for sub_i,sub_indice in enumerate(sub_indices):
+                r_filter = self.lane_iou(proposals[indice,:],proposals[sub_indice,:],overlap)
+                if r_filter: r_filters[i+1+sub_i]=1 
+        num_to_keep = len(keep_index)
+        return torch.tensor(keep_index), num_to_keep
+
+    def lane_iou(self,parent_box, compared_box, threshold):
+        start_a = (parent_box[2] * self.n_strips + 0.5).int() # add 0.5 trick to make int() like round  
+        start_b = (compared_box[2] * self.n_strips + 0.5).int()
+        start = torch.max(start_a,start_b)
+        end_a = start_a + parent_box[4] - 1 + 0.5 - (((parent_box[4] - 1)<0).int())
+        end_b = start_b + compared_box[4] - 1 + 0.5 - (((compared_box[4] - 1)<0).int())
+        end = torch.min(torch.min(end_a,end_b),torch.tensor(self.n_offsets-1))
+        if (end - start)<0:
+            return False
+        dist = 0
+        for i in range(5+start,77):
+            if i>(5+end):
+                break
+            if parent_box[i] < compared_box[i]:
+                dist += compared_box[i] - parent_box[i]
+            else:
+                dist += parent_box[i] - compared_box[i]
+        return dist < (threshold * (end - start + 1))
 
 
 def get_backbone(backbone, pretrained=False):
