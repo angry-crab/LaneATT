@@ -42,18 +42,17 @@ image_tensor = torch.unsqueeze(image, 0)
 
 obj_and_reg_output = model(image_tensor, **test_parameters)
 
-prediction = model.decode(obj_and_reg_output, as_lanes=True)
+# prediction = model.decode(obj_and_reg_output, as_lanes=True)
 
 torch.onnx.export(model,               # model being run
                 image_tensor,                         # model input (or a tuple for multiple inputs)
                 "LaneATT.onnx",   # where to save the model (can be a file or file-like object)
                 export_params=True,        # store the trained parameter weights inside the model file
-                opset_version=10,          # the ONNX version to export the model to
-                do_constant_folding=True,  # whether to execute constant folding for optimization
+                verbose=True,
+                opset_version=11,          # the ONNX version to export the model to
                 input_names = ['input'],   # the model's input names
-                output_names = ['output'], # the model's output names
-                dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
-                            'output' : {0 : 'batch_size'}})
+                output_names = ['output']) # the model's output names
+
 
     # img = (image_tensor[0].cpu().permute(1, 2, 0).numpy() * 255).astype(np.uint8)
     # img ,_ ,_ = test_dataset.draw_annotation(idx=1, img=img, label=label, pred=prediction[0], cmp=True)

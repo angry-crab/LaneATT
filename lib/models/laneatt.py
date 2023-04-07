@@ -111,9 +111,9 @@ class LaneATT(nn.Module):
         # attention_matrix (1, 1000, 1000)
         
         # Apply nms
-        proposals_list = self.nms(reg_proposals, attention_matrix, nms_thres, nms_topk, conf_threshold)
+        # proposals_list = self.nms(reg_proposals, attention_matrix, nms_thres, nms_topk, conf_threshold)
 
-        return proposals_list
+        return reg_proposals
 
     def nms(self, batch_proposals, batch_attention_matrix, nms_thres, nms_topk, conf_threshold):
         softmax = nn.Softmax(dim=1)
